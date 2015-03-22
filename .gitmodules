@@ -1,0 +1,3 @@
+[submodule "bashtools"]
+	path = bashtools
+	url = https://github.com/rhempel/bashtools.git
