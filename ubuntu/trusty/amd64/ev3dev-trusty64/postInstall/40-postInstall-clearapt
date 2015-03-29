@@ -1,0 +1,38 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 40-postInstall-clearapt
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Checks to see if there's a backup for /etc/hosts - if not then it
+# backs up the original hosts if it exists and writes out a new one
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Check if there's already a backup - return immediately if there is
+
+if [[ -e "${postInstallBackupDir}/etc/apt/sources.list" ]]; then
+    echo "Backup of /etc/apt/sources.list already exists - exiting"
+    return
+fi
+
+if [[ -e "/etc/apt/sources.list" ]]; then
+    cp --parents "/etc/apt/sources.list" "${postInstallBackupDir}"    
+    rm "/etc/apt/sources.list"
+fi
+
+echo "Clobber the apt lists"
+
+# -----------------------------------------------------------------------------
+# Clobber the apt lists so that when we update from the ISO
+# that's now mounted on the host, we actually get the updates
+
+rm    -rf "/var/lib/apt/lists/*"
+mkdir     "/var/lib/apt/lists/partial"
+
+# -----------------------------------------------------------------------------

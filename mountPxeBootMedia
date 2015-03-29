@@ -1,0 +1,93 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# mountPxeBootMedia - mounts (or unmounts) a set of installation and
+#                     repository media at the correct mount points for
+#                    the distribution, release, and architecture.
+#
+# Needed because there are only a certain number of mount points available
+# to be used at one time.
+#
+# ie mountPxeBootMedia ubuntu trusty amd64
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+LOG_LEVEL=4
+
+set -e
+shopt -s nullglob
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are NOT running as the root user
+
+checknotuser "root"
+
+# -----------------------------------------------------------------------------
+# Set DIST, REL, and ARCH from the positional parameters 
+
+DIST=$1
+REL=$2
+ARCH=$3
+
+# -----------------------------------------------------------------------------
+# Call parameter checking code - hard exit if it's broken.
+
+. ./pxeBootCheck
+
+# -----------------------------------------------------------------------------
+
+ISO_ROOT="/srv/pxeboot/iso"
+WWW_ROOT="/srv/pxeboot/www"
+
+checkemptyvar "ISO_ROOT"
+checkemptyvar "WWW_ROOT"
+
+# -----------------------------------------------------------------------------
+# Unmount any previous installer iso
+
+info "Unmounting \"${WWW_ROOT}/installer\""
+
+for mp in "${WWW_ROOT}"/installer; do
+    debug "  Attempting unmount of \"${mp}\""
+
+    if grep -qs "/dev/loop.* ${mp} iso9660 " "/proc/mounts"; then
+        info "  Unmounting \"${mp}\""
+        sudo umount "${mp}"
+    else
+        debug "  \"${mp}\" is not mounted"
+    fi
+done
+
+# -----------------------------------------------------------------------------
+# Mount the installer iso
+
+info "Mounting at \"${WWW_ROOT}/installer\""
+
+[[ -d "${WWW_ROOT}/installer" ]] || mkdir -p "${WWW_ROOT}/installer"
+
+for iso in "${ISO_ROOT}/${DIST}/${REL}/${ARCH}"/*.iso; do
+    debug "  Attempting mount of \"${iso}\""
+
+    if sudo mount "${iso}" "${WWW_ROOT}/installer"; then
+        info "  Mounted \"${iso}\""
+    else
+        fail "Can't mount \""${iso}"\" at \"${WWW_ROOT}/installer\""
+    fi
+
+    # We can only mount one image, so break
+
+    break;
+done
+
+# -----------------------------------------------------------------------------
+info "Done" 
+# -----------------------------------------------------------------------------

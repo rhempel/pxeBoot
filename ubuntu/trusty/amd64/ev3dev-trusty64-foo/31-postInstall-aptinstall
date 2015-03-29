@@ -1,0 +1,42 @@
+#!/bin/dash
+# -----------------------------------------------------------------------------
+# 31-postInstall-aptinstall
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Install base apps for this machine
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Install base apps for this machine
+
+apt-get -y --no-install-recommends install sudo ntp openssh-server nfs-common 
+
+# -----------------------------------------------------------------------------
+# Install additional apps for this machine
+
+# -----------------------------------------------------------------------------
+# Install and set up the brickstrap environment
+# - create a supermin appliance (not needed if you answered "y" during install
+# - add yourself to the kvm group (requires login to take effect)
+# - fix permissions on /boot/vmlinuz*
+
+apt-get -y --no-install-recommends install brickstrap
+
+# update-guestfs-appliance
+usermod -a -G kvm ${myUserName}
+chmod +r /boot/vmlinuz*
+
+# -----------------------------------------------------------------------------
+# Install and set up the kernel build environment
+
+apt-get -y --no-install-recommends install git
+
+apt-get -y --no-install-recommends install kernel-package devscripts
+
+# -----------------------------------------------------------------------------

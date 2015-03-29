@@ -1,0 +1,7 @@
+eval "SCRIPT_LIST=/root/postInstall/*-postInstall-*"
+
+for f in ${SCRIPT_LIST}
+do
+#   echo ${f}
+    ${f}
+done

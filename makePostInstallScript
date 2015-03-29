@@ -1,0 +1,75 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# makePostInstallScript - Used to process the distribution and target specific
+#                         xx-postInstall-* files so that when they are
+#                         executed on the target machine, all of the target
+#                         specific settings are ready to go.
+#
+# This file should only be updated once, you'll end up using the same userids
+# on most of your installs. If necessary, we could consider making target
+# specific replacement parameters, but that's probably going overboard.
+#
+# This file will issue a warning if any of the required defaults is NOT set
+#
+# ie makePostInstallScript infile outfile
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info  "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Get the infile and outfile from the command line
+
+IN_FILE=$1
+OUT_FILE=$2
+
+checkemptyvar "IN_FILE"
+checkemptyvar "OUT_FILE"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we actually have an input file
+
+info "  Processing \"${IN_FILE}\""
+
+[[ -e "${IN_FILE}" ]] || fail "  \"${IN_FILE}\" does not exist"
+
+# -----------------------------------------------------------------------------
+# Here's where we set the replacement values for the sed experessions, the
+# default is to use the current username and their UID/GID for the target
+# username and remote hostname.
+#
+# You can change these values to whatever you like!
+
+myUserName=$(whoami)
+myUserUID=$(id -u `whoami`)
+myUserGID=$(id -g `whoami`)
+hostUserName=$(whoami)
+
+checkemptyvar "myUserName"
+checkemptyvar "myUserUID"
+checkemptyvar "myUserGID"
+checkemptyvar "hostUserName"
+
+# -----------------------------------------------------------------------------
+# Now call up the sed script to read, transform, and write IN_FILE to OUT_FILE
+
+sed -n -e "s/^myUserName=\"defaultuser\"$/myUserName=\"${myUserName}\"/"    \
+       -e "s/^myUserUID=\"defaultUID\"$/myUserUID=\"${myUserUID}\"/"        \
+       -e "s/^myUserGID=\"defaultGID\"$/myUserGID=\"${myUserGID}\"/"        \
+       -e "s/^hostUserName=\"hostuser\"$/hostUserName=\"${hostUserName}\"/" \
+       -e "p"                                                           \
+    "${IN_FILE}" > "${OUT_FILE}"
+
+# -----------------------------------------------------------------------------
+info "Done" 
+# -----------------------------------------------------------------------------

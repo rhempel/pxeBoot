@@ -1,0 +1,96 @@
+#! /bin/dash
+# -----------------------------------------------------------------------------
+# createVM
+#
+# This file is unique per VM, so it should live in its own directory under
+# the pxeBox project
+#
+# -----------------------------------------------------------------------------
+# Shell variables for the script:
+
+vmName="TahrTemplate64"
+
+vmPath="$HOME/VirtualBox VMs"
+
+vmDescription="Tahr 64 Headless PreSeeded Install Template"
+
+# Needs to be this big - 256 MB fails the install
+vmRAMSize="512"
+
+vmDiskSize="6144"
+vmDiskMedium="$vmPath"/"$vmName"/"$vmName".vdi
+
+vmVrdePort="3392"
+
+vmNATHostOnlyAddress="192.168.56.55"
+vmNATHostOnlyNetmask="255.255.255.0"
+vmNATBootFile="pxelinux.0"
+
+# -----------------------------------------------------------------------------
+# Create the VM
+
+VBoxManage createvm --name "$vmName" --register
+
+# -----------------------------------------------------------------------------
+# Set up the VM with memory
+# - Starting with Ubuntu Precise Pangolin, the default video card need
+#   at least 12 MB of RAM to show the boot screen and startup messages
+
+VBoxManage modifyvm "$vmName" --memory $vmRAMSize    \
+                              --acpi on              \
+                              --boot1 disk           \
+                              --boot2 dvd            \
+                              --boot3 net            \
+                              --vram 12              \
+                              --vrde on              \
+                              --vrdeport $vmVrdePort \
+                              --vrdeauthtype null    \
+                              --rtcuseutc on
+
+# -----------------------------------------------------------------------------
+# Add the NICs, always add NIC1 as host-only. Other NICs depend on existence
+# of corresponding host adapters...
+ 
+VBoxManage modifyvm "$vmName" --nic1 hostonly             \
+                              --hostonlyadapter1 vboxnet0
+
+if test -e "/sys/class/net/eth0"
+  then VBoxManage modifyvm "$vmName" --nic2 bridged        \
+                                     --bridgeadapter2 eth0
+fi
+
+if test -e "sys/class/net/eth1"
+  then VBoxManage modifyvm "$vmName" --nic3 bridged        \
+                                     --bridgeadapter3 eth1
+fi
+
+VBoxManage modifyvm "$vmName" --nic4 nat                    \
+                              --nicbootprio4 1              \
+                              --natnet4 10.0.2/24           \
+                              --nattftpfile4 $vmNATBootFile
+
+# -----------------------------------------------------------------------------
+# Create the hard drive controller and disk image
+ 
+VBoxManage storagectl "$vmName" --name "SCSI Controller" \
+                                --add scsi               \
+                                --controller LSILogic
+
+VBoxManage createhd --filename "$vmDiskMedium" \
+                    --size $vmDiskSize
+
+# -----------------------------------------------------------------------------
+# Attach the disk image
+ 
+VBoxManage storageattach "$vmName" --storagectl "SCSI Controller" \
+                                   --port 0                       \
+                                   --device 0                     \
+                                   --type hdd                     \
+                                   --medium "$vmDiskMedium"
+
+# -----------------------------------------------------------------------------
+# Set up VM specific data strings that we can query later
+ 
+VBoxManage setextradata "$vmName" vmNATHostOnlyAddress $vmNATHostOnlyAddress 
+VBoxManage setextradata "$vmName" vmNATHostOnlyNetmask $vmNATHostOnlyNetmask 
+

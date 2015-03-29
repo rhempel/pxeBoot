@@ -1,0 +1,198 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# installPxeVM - Sets up a hands off install of a PXE Booted Debian/Ubuntu VM
+#
+# Works best if run from your local pxeBoot directory - that way you can choose
+# the distribution you're trying to build. You must be the pxeboot user to run
+# this script!
+#
+# ie installPxeVM ubuntu trusty amd64 vmname
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+LOG_LEVEL=4
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are NOT running as the root user
+
+checknotuser "root"
+
+# -----------------------------------------------------------------------------
+# Set DIST, REL, and ARCH from the positional parameters 
+
+DIST=$1
+REL=$2
+ARCH=$3
+
+# -----------------------------------------------------------------------------
+# Call parameter checking code - hard exit if it's broken.
+
+. ./pxeBootCheck
+
+# -----------------------------------------------------------------------------
+# Check if we have a VM name, exit if we don't
+
+VM_NAME="$4"
+
+[[ -z "${VM_NAME}" ]] && fail "Missing VM name as first parameter"
+
+# -----------------------------------------------------------------------------
+# Check if we have a VM file, exit if we don't
+
+VM_PATH="/srv/vboxusers/$(id -u -n)"
+
+[[ -d "${VM_PATH}/${VM_NAME}" ]] || fail "Missing VM at \"${VM_PATH}/${VM_NAME}"\"
+
+checkemptyvar "VM_NAME"
+checkemptyvar "VM_PATH"
+
+# -----------------------------------------------------------------------------
+# Check if we have a password file specified in the command line. If not, then
+# check if ~/passwords.preseed exists, and if that fails set the preseed file
+# to /dev/nul
+
+PASSWORD_FILE="$5"
+
+if [[ -z "${PASSWORD_FILE}" ]]; then
+    info "  No password file specified..."
+
+    if [[ -e "${HOME}/.passwords.preseed" ]]; then
+        info "  using ${HOME}/.passwords.preseed"
+        PASSWORD_FILE="${HOME}/.passwords.preseed"
+    else 
+        info "  ${HOME}/.passwords.preseed does not exist - using /dev/null"
+        PASSWORD_FILE="/dev/null"
+    fi
+else
+    info "  Using specified password file..."
+
+    if [ ! -e "${PASSWORD_FILE}" ]; then
+        fail "  "${PASSWORD_FILE}" does not exist"
+        exit 1
+    fi
+fi
+
+checkemptyvar "PASSWORD_FILE"
+
+# -----------------------------------------------------------------------------
+# Locate the preseed file, and make sure it exists
+
+PRESEED_FILE="./${DIST}/${REL}/${ARCH}/${VM_NAME}/preseed.cfg" 
+
+[[ -e "${PRESEED_FILE}" ]] || fail "Missing \"${PRESEED_FILE}\""
+
+# -----------------------------------------------------------------------------
+# Locate the postInstall directory, and make sure it exists
+
+POSTINSTALL_DIR="./${DIST}/${REL}/${ARCH}/${VM_NAME}/postInstall" 
+
+[[ -e "${PRESEED_FILE}" ]] || fail "Missing \"${POSTINSTALL_DIR}\""
+
+# ------------------------------------------------------------------------------
+info "  Cleaning up the /srv/pxeboot/www directory"
+
+# Lesson learned the hard way, always specify an exact path for `rm` in
+# a shell script!!! And NEVER wildcard `rm -rf` - and if possible, don't
+# run scripts with `root` access!
+
+rm    -f "/srv/pxeboot/www/preseed.cfg"
+rm -r -f "/srv/pxeboot/www/postInstall"
+
+# -----------------------------------------------------------------------------
+# Set up the TFTP and WEB root directories
+
+TFTP_ROOT="/srv/pxeboot/tftp"
+WEB_ROOT="/srv/pxeboot/www"
+
+checkemptyvar "TFTP_ROOT"
+checkemptyvar "WEB_ROOT"
+
+# -----------------------------------------------------------------------------
+info "  Appending the password file to the preseed file"
+
+cat "${PRESEED_FILE}" "${PASSWORD_FILE}" > "${WEB_ROOT}/preseed.cfg"
+
+# -----------------------------------------------------------------------------
+info "  Copying the postInstall files"
+
+mkdir -p "${WEB_ROOT}/postInstall"
+
+for f in ${POSTINSTALL_DIR}/*-postInstall-*
+do
+    debug "  Copying \"${f}\""
+    cp "${f}" "${WEB_ROOT}/postInstall/${f##${POSTINSTALL_DIR}/}"
+done
+
+# -----------------------------------------------------------------------------
+info "  Copying \"postInstall-all\""
+
+cp "${POSTINSTALL_DIR}/postInstall-all" "${WEB_ROOT}/postInstall/postInstall-all"
+
+# -----------------------------------------------------------------------------
+info "  Processing postInstall-setupvars"
+
+./makePostInstallScript "${POSTINSTALL_DIR}/postInstall-setupvars" "${WEB_ROOT}/postInstall/postInstall-setupvars"
+
+# -----------------------------------------------------------------------------
+# Check if we have the netboot directory for this distribution and
+# architecture, then copy the files to it.
+
+info "  Populating TFTP with pxebootable image"
+
+[[ -d  "${TFTP_ROOT}" ]] || fail "Missing \"${TFTP_ROOT}\""
+
+NETBOOT_DIR="/srv/pxeboot/pxeboot/${DIST}/${REL}/${ARCH}" 
+
+[[ -e "${NETBOOT_DIR}/pxelinux.0" ]] || fail "Missing \"${NETBOOT_DIR}/pxelinux.0\""
+
+rm -rf "/srv/pxeboot/tftp/"/*
+
+cp -pR "${NETBOOT_DIR}"/* "${TFTP_ROOT}"
+
+# -----------------------------------------------------------------------------
+# We need a special check for Ubuntu - the default linux and initrd.gz
+# files in the netboot installer distribution files do not work well for 
+# VirtualBox (and probably any real machine that needs SCSI disk support.
+#
+# Not only that, the kernel in the installer does not match the kernel
+# on the distribution media - so let's copy linux and initrd.gz from the
+# ones on the media we just mounted!
+ 
+if [[ "ubuntu" = "${DIST}" ]]; then
+    info "  Doing something special for "${DIST}/${REL}""
+    info "  - Fixing installer kernel incompatible with distribution kernel"
+
+    chmod 775 "${TFTP_ROOT}/${DIST}-installer/${ARCH}/linux"
+    chmod 775 "${TFTP_ROOT}/${DIST}-installer/${ARCH}/initrd.gz"
+
+    cp  "${WEB_ROOT}/installer/install/netboot/${DIST}-installer/${ARCH}/linux"     "${TFTP_ROOT}/${DIST}-installer/${ARCH}"
+    cp  "${WEB_ROOT}/installer/install/netboot/${DIST}-installer/${ARCH}/initrd.gz" "${TFTP_ROOT}/${DIST}-installer/${ARCH}"
+fi
+
+# ------------------------------------------------------------------------------
+info "Starting up \""${VM_NAME}"\""
+
+VBoxManage startvm "${VM_NAME}"
+
+# Now spin until the virtual machine has completed, and unmount the
+# ISO files
+
+while [[ "`VBoxManage list runningvms | grep ${VM_NAME}`" ]]; do
+    sleep 5
+done
+
+# ------------------------------------------------------------------------------
+info "Done" 
+# ------------------------------------------------------------------------------

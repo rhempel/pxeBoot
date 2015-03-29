@@ -1,0 +1,23 @@
+#!/bin/dash
+# -----------------------------------------------------------------------------
+# 20-postInstall-ifupdown
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Restart the network interfaces
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Restart the network interfaces
+
+for ethx in eth0 eth1 eth2; do
+    ifdown $ethx
+    ifup   $ethx
+done
+
+# -----------------------------------------------------------------------------

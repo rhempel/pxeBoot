@@ -1,0 +1,72 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# pxeBootLib - Collection of helper functions and variable setup code
+#              that's useful for the pxeboot project
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE.txt for details
+# -----------------------------------------------------------------------------
+# REQUIRED SCRIPTS
+#
+# bashtools/src/fmt
+# -----------------------------------------------------------------------------
+
+function _checkValidParameter () {
+  for p in $3
+  do
+    if [ "$p" = "$1" ]
+    then
+      return 0
+    fi 
+  done
+
+  fail \""$1"\" is an invalid "$2", must be one of: \""$3"\"
+}
+
+# -----------------------------------------------------------------------------
+# Set up the valid DIST list
+
+_DIST_LIST="debian ubuntu"
+
+debug "_DIST_LIST is ${_DIST_LIST}"
+
+# -----------------------------------------------------------------------------
+# Set valid REL list - eval the correct REL_LIST based on $DIST
+
+_REL_LIST_debian="squeeze wheezy sid"
+_REL_LIST_ubuntu="lucid precise trusty"
+
+_REL_LIST="_REL_LIST_${DIST}"
+_REL_LIST="${!_REL_LIST}"
+
+debug "_REL_LIST is ${_REL_LIST}"
+
+# -----------------------------------------------------------------------------
+# Set valid ARCH list - eval the correct ARCH_LIST based on $DIST and $REL
+
+_ARCH_LIST_debian_squeeze="i386 amd64"
+_ARCH_LIST_debian_wheezy="i386 amd64"
+_ARCH_LIST_debian_sid="i386 amd64"
+_ARCH_LIST_ubuntu_lucid="i386"
+_ARCH_LIST_ubuntu_precise="i386"
+_ARCH_LIST_ubuntu_trusty="i386 amd64"
+
+_ARCH_LIST="_ARCH_LIST_${DIST}_${REL}"
+_ARCH_LIST="${!_ARCH_LIST}"
+
+debug "_ARCH_LIST is ${_ARCH_LIST}"
+
+# -----------------------------------------------------------------------------
+# Now check for valid positional parameters, all three tests must pass or
+# this script fails
+
+if      _checkValidParameter "$DIST" "distribution" "$_DIST_LIST" \
+    &&  _checkValidParameter "$REL"  "release"      "$_REL_LIST"  \
+    &&  _checkValidParameter "$ARCH" "architecture" "$_ARCH_LIST" ; then
+	return 0
+else 
+        fail "Bad parameters"
+fi
+
+# -----------------------------------------------------------------------------
