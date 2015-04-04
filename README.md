@@ -282,7 +282,7 @@ interfaces I generally configure whenever I set up VirtualBox:
 ```
 VBoxManage hostonlyif create ipconfig "vboxnet0" --ip 192.168.56.1
 VBoxManage dhcpserver remove --ifname "vboxnet0"
-VBoxManage dhcpserver add    --ifname "vboxnet0" --ip 192.168.56.1       \
+VBoxManage dhcpserver add    --ifname "vboxnet0" --ip 192.168.56.2       \
                                                  --netmask 255.255.255.0 \
                                                  --lowerip 192.168.56.100\
                                                  --upperip 192.168.56.115
@@ -290,7 +290,7 @@ VBoxManage dhcpserver modify --ifname "vboxnet0" --enable
 
 VBoxManage hostonlyif create ipconfig "vboxnet1" --ip 10.0.2.1
 VBoxManage dhcpserver remove --ifname "vboxnet1" 
-VBoxManage dhcpserver add    --ifname "vboxnet1" --ip 10.0.2.1           \
+VBoxManage dhcpserver add    --ifname "vboxnet1" --ip 10.0.2.2           \
                                                  --netmask 255.255.255.0 \
                                                  --lowerip 10.0.2.100    \
                                                  --upperip 10.0.2.115
