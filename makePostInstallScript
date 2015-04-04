@@ -30,45 +30,113 @@ info  "Executing $0"
 # -----------------------------------------------------------------------------
 # Get the infile and outfile from the command line
 
-IN_FILE=$1
-OUT_FILE=$2
+INFILE=$1
+OUTFILE=$2
 
-checkemptyvar "IN_FILE"
-checkemptyvar "OUT_FILE"
+checkemptyvar "INFILE"
+checkemptyvar "OUTFILE"
 
 # -----------------------------------------------------------------------------
 # Check to make sure we actually have an input file
 
-info "  Processing \"${IN_FILE}\""
+info "  Processing \"${INFILE}\""
 
-[[ -e "${IN_FILE}" ]] || fail "  \"${IN_FILE}\" does not exist"
+[[ -e "${INFILE}" ]] || fail "  \"${INFILE}\" does not exist"
 
 # -----------------------------------------------------------------------------
 # Here's where we set the replacement values for the sed experessions, the
-# default is to use the current username and their UID/GID for the target
-# username and remote hostname.
+# default is to use the current username and their UID/GID for the vm 
+# username and host username.
 #
 # You can change these values to whatever you like!
 
-myUserName=$(whoami)
-myUserUID=$(id -u `whoami`)
-myUserGID=$(id -g `whoami`)
+vmUserName="$(whoami)"
+
+vmUserUID="$(id -u `whoami`)"
+vmUserGID="$(id -g `whoami`)"
+
+vmMachineName="${VM_NAME}"
+vmHostName="${VM_NAME}"
+
+vmIPAddress="$(VBoxManage getextradata ${VM_NAME} HostOnlyVmAddress)"
+vmIPAddress="${vmIPAddress#Value: }"
+
 hostUserName=$(whoami)
 
-checkemptyvar "myUserName"
-checkemptyvar "myUserUID"
-checkemptyvar "myUserGID"
-checkemptyvar "hostUserName"
+hostMachineName=$(hostname)
+hostDomainName=$(hostname -d)
+
+vmNFSDirectory="/home/${vmUserName}/projects"
+hostNFSDirectory="/home/${hostUserName}/nfs/${vmHostName}"
+
+hostIPAddress="$(VBoxManage getextradata ${VM_NAME} HostOnlyHostAddress)"
+hostIPAddress="${hostIPAddress#Value: }"
+
+vmDist="${DIST}"
+vmRel="${REL}"
+vmArch="${ARCH}"
+
+hostDebAddress="pxeboot.installer.${hostDomainName}:8080"
+
+mirrorDebAddress="mirror.csclub.uwaterloo.ca"
+
+ipv4DNSA="8.8.8.8"
+ipv4DNSB="8.8.4.4"
+ipv6DNSA="2001:4860:4860::8888"
+ipv6DNSB="2001:4860:4860::8844"
 
 # -----------------------------------------------------------------------------
-# Now call up the sed script to read, transform, and write IN_FILE to OUT_FILE
 
-sed -n -e "s/^myUserName=\"defaultuser\"$/myUserName=\"${myUserName}\"/"    \
-       -e "s/^myUserUID=\"defaultUID\"$/myUserUID=\"${myUserUID}\"/"        \
-       -e "s/^myUserGID=\"defaultGID\"$/myUserGID=\"${myUserGID}\"/"        \
-       -e "s/^hostUserName=\"hostuser\"$/hostUserName=\"${hostUserName}\"/" \
-       -e "p"                                                           \
-    "${IN_FILE}" > "${OUT_FILE}"
+checkemptyvar "vmUserName"
+checkemptyvar "vmUserUID"
+checkemptyvar "vmUserGID"
+checkemptyvar "vmMachineName"
+checkemptyvar "vmHostName"
+checkemptyvar "vmIPAddress"
+checkemptyvar "hostUserName"
+checkemptyvar "hostMachineName"
+checkemptyvar "hostDomainName"
+checkemptyvar "vmNFSDirectory"
+checkemptyvar "hostNFSDirectory"
+checkemptyvar "hostIPAddress"
+checkemptyvar "vmDist"
+checkemptyvar "vmRel"
+checkemptyvar "vmArch"
+checkemptyvar "hostDebAddress"
+checkemptyvar "mirrorDebAddress"
+checkemptyvar "ipv4DNSA"
+checkemptyvar "ipv4DNSB"
+checkemptyvar "ipv6DNSA"
+checkemptyvar "ipv6DNSB"
+
+# -----------------------------------------------------------------------------
+# Now call up the sed script to read, transform, and write INFILE to OUTFILE
+#
+# Note that we're using "|" as the expression separator because sed gets
+# confused by the "/" characters in path names...
+
+sed -e "s|^vmUserName=$|vmUserName=\"${vmUserName}\"|"                   \
+    -e "s|^vmUserUID=$|vmUserUID=\"${vmUserUID}\"|"                      \
+    -e "s|^vmUserGID=$|vmUserGID=\"${vmUserGID}\"|"                      \
+    -e "s|^vmMachineName=$|vmMachineName=\"${vmMachineName}\"|"          \
+    -e "s|^vmHostName=$|vmHostName=\"${vmHostName}\"|"                   \
+    -e "s|^vmIPAddress=$|vmIPAddress=\"${vmIPAddress}\"|"                \
+    -e "s|^hostUserName=$|hostUserName=\"${hostUserName}\"|"             \
+    -e "s|^hostMachineName=$|hostMachineName=\"${hostMachineName}\"|"    \
+    -e "s|^hostDomainName=$|hostDomainName=\"${hostDomainName}\"|"       \
+    -e "s|^vmNFSDirectory=$|vmNFSDirectory=\"${vmNFSDirectory}\"|"       \
+    -e "s|^hostNFSDirectory=$|hostNFSDirectory=\"${hostNFSDirectory}\"|" \
+    -e "s|^hostIPAddress=$|hostIPAddress=\"${hostIPAddress}\"|"          \
+    -e "s|^vmDist=$|vmDist=\"${vmDist}\"|"                               \
+    -e "s|^vmRel=$|vmRel=\"${vmRel}\"|"                                  \
+    -e "s|^vmArch=$|vmArch=\"${vmArch}\"|"                               \
+    -e "s|^hostDebAddress=$|hostDebAddress=\"${hostDebAddress}\"|"       \
+    -e "s|^mirrorDebAddress=$|mirrorDebAddress=\"${mirrorDebAddress}\"|" \
+    -e "s|^ipv4DNSA=$|ipv4DNSA=\"${ipv4DNSA}\"|"                         \
+    -e "s|^ipv4DNSB=$|ipv4DNSB=\"${ipv4DNSB}\"|"                         \
+    -e "s|^ipv6DNSA=$|ipv6DNSA=\"${ipv6DNSA}\"|"                         \
+    -e "s|^ipv6DNSB=$|ipv6DNSB=\"${ipv6DNSB}\"|"                         \
+    "${INFILE}" > "${OUTFILE}"
 
 # -----------------------------------------------------------------------------
 info "Done" 

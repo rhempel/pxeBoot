@@ -13,8 +13,6 @@
 # See LICENSE for https://github.com/rhempel/pxeBoot
 # -----------------------------------------------------------------------------
 
-LOG_LEVEL=4
-
 set -e
 
 . ./bashtools/src/fmt
@@ -87,18 +85,24 @@ fi
 checkemptyvar "PASSWORD_FILE"
 
 # -----------------------------------------------------------------------------
-# Locate the preseed file, and make sure it exists
+# Locate the template preseed file and postInstallDirectory
 
-PRESEED_FILE="./${DIST}/${REL}/${ARCH}/${VM_NAME}/preseed.cfg" 
+TEMPLATE_DIR="./${DIST}/${REL}/${ARCH}/template-${REL}-${ARCH}"
+TEMPLATE_PRESEED="${TEMPLATE_DIR}/preseed.cfg"
+TEMPLATE_POSTINSTALL="${TEMPLATE_DIR}/postInstall"
 
-[[ -e "${PRESEED_FILE}" ]] || fail "Missing \"${PRESEED_FILE}\""
+[[ -e "${TEMPLATE_PRESEED}"     ]] || fail "Missing \"${TEMPLATE_PRESEED}\""
+[[ -d "${TEMPLATE_POSTINSTALL}" ]] || fail "Missing \"${TEMPLATE_POSTINSTALL}\""
 
 # -----------------------------------------------------------------------------
-# Locate the postInstall directory, and make sure it exists
+# Locate the VM specific preseed file and postInstallDirectory
 
-POSTINSTALL_DIR="./${DIST}/${REL}/${ARCH}/${VM_NAME}/postInstall" 
+VMCONF_DIR="./${DIST}/${REL}/${ARCH}/${VM_NAME}"
+VMCONF_PRESEED="${VMCONF_DIR}/preseed.cfg"
+VMCONF_POSTINSTALL="${VMCONF_DIR}/postInstall"
 
-[[ -e "${PRESEED_FILE}" ]] || fail "Missing \"${POSTINSTALL_DIR}\""
+[[ -e "${VMCONF_PRESEED}"     ]] || fail "Missing \"${VMCONF_PRESEED}\""
+[[ -d "${VMCONF_POSTINSTALL}" ]] || fail "Missing \"${VMCONF_POSTINSTALL}\""
 
 # ------------------------------------------------------------------------------
 info "  Cleaning up the /srv/pxeboot/www directory"
@@ -120,30 +124,43 @@ checkemptyvar "TFTP_ROOT"
 checkemptyvar "WEB_ROOT"
 
 # -----------------------------------------------------------------------------
-info "  Appending the password file to the preseed file"
+info "  Appending the password file to the template and VM specific preseed file"
 
-cat "${PRESEED_FILE}" "${PASSWORD_FILE}" > "${WEB_ROOT}/preseed.cfg"
+if [[ "${TEMPLATE_PRESEED}" != "${VMCONF_PRESEED}" ]]; then 
+    cat "${TEMPLATE_PRESEED}" "${VMCONF_PRESEED}" "${PASSWORD_FILE}" > "${WEB_ROOT}/preseed.cfg"
+else
+    cat "${TEMPLATE_PRESEED}"                     "${PASSWORD_FILE}" > "${WEB_ROOT}/preseed.cfg"
+fi
 
 # -----------------------------------------------------------------------------
-info "  Copying the postInstall files"
+info "  Copying the template postInstall files"
 
 mkdir -p "${WEB_ROOT}/postInstall"
 
-for f in ${POSTINSTALL_DIR}/*-postInstall-*
-do
+for f in ${TEMPLATE_POSTINSTALL}/*-postInstall-*; do
     debug "  Copying \"${f}\""
-    cp "${f}" "${WEB_ROOT}/postInstall/${f##${POSTINSTALL_DIR}/}"
+    [[ -e "${f}" ]] && cp "${f}" "${WEB_ROOT}/postInstall/${f##${TEMPLATE_POSTINSTALL}/}"
 done
+
+# -----------------------------------------------------------------------------
+info "  Copying the VM specific postInstall files"
+
+if [[ "${TEMPLATE_POSTINSTALL}" != "${VMCONF_POSTINSTALL}" ]]; then 
+    for f in ${VMCONF_POSTINSTALL}/*-postInstall-*; do
+        debug "  Copying \"${f}\""
+        [[ -e "${f}" ]] && cp "${f}" "${WEB_ROOT}/postInstall/${f##${VMCONF_POSTINSTALL}/}"
+    done
+fi
 
 # -----------------------------------------------------------------------------
 info "  Copying \"postInstall-all\""
 
-cp "${POSTINSTALL_DIR}/postInstall-all" "${WEB_ROOT}/postInstall/postInstall-all"
+cp "${TEMPLATE_POSTINSTALL}/postInstall-all" "${WEB_ROOT}/postInstall/postInstall-all"
 
 # -----------------------------------------------------------------------------
 info "  Processing postInstall-setupvars"
 
-./makePostInstallScript "${POSTINSTALL_DIR}/postInstall-setupvars" "${WEB_ROOT}/postInstall/postInstall-setupvars"
+. ./makePostInstallScript "${TEMPLATE_POSTINSTALL}/postInstall-setupvars" "${WEB_ROOT}/postInstall/postInstall-setupvars"
 
 # -----------------------------------------------------------------------------
 # Check if we have the netboot directory for this distribution and
@@ -172,7 +189,7 @@ cp -pR "${NETBOOT_DIR}"/* "${TFTP_ROOT}"
  
 if [[ "ubuntu" = "${DIST}" ]]; then
     info "  Doing something special for "${DIST}/${REL}""
-    info "  - Fixing installer kernel incompatible with distribution kernel"
+    info "  - Replacing installer kernel with distribution kernel"
 
     chmod 775 "${TFTP_ROOT}/${DIST}-installer/${ARCH}/linux"
     chmod 775 "${TFTP_ROOT}/${DIST}-installer/${ARCH}/initrd.gz"
@@ -180,6 +197,11 @@ if [[ "ubuntu" = "${DIST}" ]]; then
     cp  "${WEB_ROOT}/installer/install/netboot/${DIST}-installer/${ARCH}/linux"     "${TFTP_ROOT}/${DIST}-installer/${ARCH}"
     cp  "${WEB_ROOT}/installer/install/netboot/${DIST}-installer/${ARCH}/initrd.gz" "${TFTP_ROOT}/${DIST}-installer/${ARCH}"
 fi
+
+# ------------------------------------------------------------------------------
+info "Let all the file copies finish up"
+
+sleep 2
 
 # ------------------------------------------------------------------------------
 info "Starting up \""${VM_NAME}"\""

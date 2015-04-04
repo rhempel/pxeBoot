@@ -1,0 +1,69 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# makePxeBootableVM - Runs the createVM script for the vmname at the 
+#                     specified distribution, release, and architecture.
+#
+# ie makePxeBootableVM ubuntu trusty amd64 vmname
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are NOT running as the root user
+
+checknotuser "root"
+
+# -----------------------------------------------------------------------------
+# Set DIST, REL, and ARCH from the positional parameters 
+
+DIST=$1
+REL=$2
+ARCH=$3
+
+# -----------------------------------------------------------------------------
+# Call parameter checking code - hard exit if it's broken.
+
+. ./pxeBootCheck
+
+# -----------------------------------------------------------------------------
+# Check if we have a VM name, exit if we don't
+
+VM_NAME="$4"
+
+[[ -z "${VM_NAME}" ]] && fail "Missing VM name as first parameter"
+
+# -----------------------------------------------------------------------------
+# Check if we have a VM file, exit if this one already exists
+
+VM_PATH="/srv/vboxusers/$(id -u -n)"
+
+[[ -d "${VM_PATH}/${VM_NAME}" ]] && fail "VM already exists at \"${VM_PATH}/${VM_NAME}"\"
+
+checkemptyvar "VM_NAME"
+checkemptyvar "VM_PATH"
+
+# -----------------------------------------------------------------------------
+# Check if we have a VM configuration dir, exit if it does not exist 
+
+[[ -d "./${DIST}/${REL}/${ARCH}/${VM_NAME}" ]] || fail "VM config dir does not exist at \"./${DIST}/${REL}/${ARCH}/${VM_NAME}"\"
+
+# ------------------------------------------------------------------------------
+info "Creating \""${VM_NAME}"\""
+
+./${DIST}/${REL}/${ARCH}/${VM_NAME}/createVM
+
+# ------------------------------------------------------------------------------
+info "Done" 
+# ------------------------------------------------------------------------------
+

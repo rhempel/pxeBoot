@@ -14,8 +14,6 @@
 # See LICENSE for https://github.com/rhempel/pxeBoot
 # -----------------------------------------------------------------------------
 
-LOG_LEVEL=4
-
 set -e
 shopt -s nullglob
 

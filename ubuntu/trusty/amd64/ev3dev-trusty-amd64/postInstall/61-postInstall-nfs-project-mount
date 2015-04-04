@@ -1,0 +1,25 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 50-postInstall-nfs-project-mount
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Create the user's projects directory and mount it
+
+mkdir -p "/home/${vmUserName}/projects"
+chown "${vmUserName}":"${vmUserName}" "/home/${vmUserName}/projects"
+
+mount "/home/${vmUserName}/projects"
+
+# -----------------------------------------------------------------------------

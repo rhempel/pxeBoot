@@ -1,4 +1,0 @@
-for f in /root/postInstall/*-postInstall-*
-do
-    ${f}
-done
