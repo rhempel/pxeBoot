@@ -1,0 +1,166 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# makePxeBootScripts - Updates the results of the makePxeInstaller.sh
+#                      script to allow us to boot a computer via pxe and
+#                      automagically install a Debian based distribution
+#                      using a preseed file
+#
+# Works best if run from your local pxeBoot directory - that way you can choose
+# the distribution you're trying to build. You must be the pxeboot user to run
+# this script!
+#
+# ie makePxeBootScripts ubuntu trusty amd64
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are running as the pxeboot user
+
+checkuser "pxeboot"
+
+# -----------------------------------------------------------------------------
+# Set DIST, REL, and ARCH from the positional parameters 
+
+DIST=$1
+REL=$2
+ARCH=$3
+
+# -----------------------------------------------------------------------------
+# Call parameter checking code - hard exit if it's broken.
+
+. ./pxeBootCheck
+
+# -----------------------------------------------------------------------------
+# Set installer image path and files - note that the BOOT_CFG, BOOT_MENU, and
+# BOOT_VGA variants all look the same now, but there was a time when the
+# strings were slightly different for each DIST and REL.
+
+checkemptyvar "HOME"
+
+INSTALLER="${HOME}/pxeboot/${DIST}/${REL}/${ARCH}"
+
+checkemptyvar "INSTALLER"
+
+BOOT_DIR_debian="${INSTALLER}/${DIST}-installer/${ARCH}"
+BOOT_DIR_ubuntu="${INSTALLER}/${DIST}-installer/${ARCH}"
+
+BOOT_DIR="BOOT_DIR_${DIST}"
+BOOT_DIR="${!BOOT_DIR}"
+
+BOOT_CFG_debian="pxelinux.cfg/default"
+BOOT_CFG_ubuntu="pxelinux.cfg/default"
+
+BOOT_CFG="BOOT_CFG_${DIST}"
+BOOT_CFG="${!BOOT_CFG}"
+
+BOOT_MENU_debian_squeeze="boot-screens/txt.cfg"
+BOOT_MENU_debian_wheezy="boot-screens/txt.cfg"
+BOOT_MENU_ubuntu_lucid="boot-screens/text.cfg"
+BOOT_MENU_ubuntu_precise="boot-screens/txt.cfg"
+BOOT_MENU_ubuntu_trusty="boot-screens/txt.cfg"
+
+BOOT_MENU="BOOT_MENU_${DIST}_${REL}"
+BOOT_MENU="${!BOOT_MENU}"
+
+BOOT_VGA_debian="vga=788"
+BOOT_VGA_ubuntu="vga=788"
+
+BOOT_VGA="BOOT_VGA_${DIST}"
+BOOT_VGA="${!BOOT_VGA}"
+
+checkemptyvar "BOOT_DIR"
+checkemptyvar "BOOT_CFG"
+checkemptyvar "BOOT_MENU"
+checkemptyvar "BOOT_VGA"
+
+# -----------------------------------------------------------------------------
+# Make sure we have the installer directory in place, and exit with a warning
+# if we don't
+
+[[ -d  "${INSTALLER}" ]] \
+    || fail "Missing \"${INSTALLER}\" - run makePxeInstaller.sh?"
+
+# Set up the boot timeout in multiples of 10 ticks per second.
+# BOOT_TIMEOUT=50 means 5 seconds
+
+BOOT_TIMEOUT=100  
+
+# Set up the URL where we'll find the preseed file. This particular
+# URL is the main host interface on the host-only network that is
+# provided by VirtualBox.
+
+# You may be using a different server - change as needed.
+# 
+BOOT_URL=http://192.168.56.1:8080/preseed.cfg
+
+# Set up the ethernet interface that we'll boot from. This one is the 
+# VirtualBox host-only network adapter on the VM - it will get its config
+# from the VirtualBox DHCP server
+
+BOOT_IF=eth0
+
+# Check to see if the original files are already backed up. If not then
+# just go ahead and make copies before we overwrite them.
+
+# We can always regenerate these files by running makePxeInstaller.sh but
+# this is an extra safety step.
+
+checkemptyvar "BOOT_TIMEOUT"
+checkemptyvar "BOOT_URL"
+checkemptyvar "BOOT_IF"
+
+info "Customizing boot files..."
+
+for file in "${BOOT_CFG}" "${BOOT_MENU}"; do
+    if [[ ! -f "${BOOT_DIR}/${file}.orig"  ]] && [[ -f "${BOOT_DIR}/${file}" ]]; then
+	 info "  Backing up ${file}"
+         cp "${BOOT_DIR}/${file}"  "${BOOT_DIR}/${file}.orig"
+    fi
+done
+
+# -----------------------------------------------------------------------------
+# Now send out a new BOOT_CFG file
+
+info "Writing a new "${BOOT_CFG}"..."
+
+echo \
+"# D-I config version 2.0
+include ${DIST}-installer/${ARCH}/boot-screens/menu.cfg
+default ${DIST}-installer/${ARCH}/boot-screens/vesamenu.c32
+prompt 0
+timeout ${BOOT_TIMEOUT}" > "${BOOT_DIR}/${BOOT_CFG}"
+
+# -----------------------------------------------------------------------------
+# Now send out a new BOOT_MENU file
+
+info "Writing a new "${BOOT_MENU}"..."
+
+echo \
+"default handsoff
+
+label handsoff
+	menu label ^Handsoff Preseed Install
+	menu default
+	kernel ${DIST}-installer/${ARCH}/linux
+	append ${BOOT_VGA} initrd=${DIST}-installer/${ARCH}/initrd.gz auto=true priority=critical interface=${BOOT_IF} netcfg/no_default_route=true netcfg/get_nameservers= url=${BOOT_URL} DEBCONF_DEBUG=5 --
+
+label install
+	menu label ^Install
+	kernel ${DIST}-installer/${ARCH}/linux
+	append ${BOOT_VGA} initrd=${DIST}-installer/${ARCH}/initrd.gz -- quiet" > "${BOOT_DIR}/${BOOT_MENU}"
+
+# -----------------------------------------------------------------------------
+info "Done"
+# -----------------------------------------------------------------------------

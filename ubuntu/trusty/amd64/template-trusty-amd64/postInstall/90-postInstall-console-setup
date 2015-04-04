@@ -1,0 +1,36 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 90-postInstall-console-setup
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Run the default config for console-setup through sed to set whatever you
+# want here. You can add more replacement stanzas as needed.
+
+INFILE="/etc/default/console-setup"
+TMPFILE="./console-setup"
+
+sed -e "s|^FONTFACE=\".*\"$|FONTFACE=\"Fixed\"|"        \
+    -e "p"                                              \
+    "${INFILE}" > "${TMPFILE}"
+
+mv "${TMPFILE}" "${INFILE}"
+
+# -----------------------------------------------------------------------------
+# Now reconfigure the console-setup package in non-interactive mode
+
+dpkg-reconfigure -fnoninteractive console-setup
+
+# -----------------------------------------------------------------------------
+

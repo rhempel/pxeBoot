@@ -1,0 +1,14 @@
+!# /bin/bash
+# -----------------------------------------------------------------------------
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+for f in /root/postInstall/*-postInstall-*
+do
+    ${f}
+done
+
+# -----------------------------------------------------------------------------

@@ -1,0 +1,30 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 39-postInstall-ifupdown
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# Restart the network interfaces
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+. /root/postInstall/postInstall-setupvars
+
+# -----------------------------------------------------------------------------
+# Restart the network interfaces
+
+for ethx in /sys/class/net/eth*; do
+    ifdown ${ethx##*/}
+    sleep 1
+    ifup   ${ethx##*/}
+done
+
+sleep 1
+
+# -----------------------------------------------------------------------------

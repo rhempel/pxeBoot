@@ -1,0 +1,129 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# makePxeInstaller - Make a netbootable directory that has all drivers
+#                    needed for a VirtualBox install. Note, use SCSI as
+#                    the hard drive controller, the IDE and SATA drivers
+#                    are not part of the netinst initrd.gz
+#
+#                    Yes, it's possible to get the IDE and SATA drivers
+#                    from another location and rebuild initrd.gz but
+#                    why bother when the fix is as easy as just using
+#                    a SCSI drive.
+#
+# Works best if run from your local pxeBoot directory - that way you can choose
+# the distribution you're trying to build. You must be the pxeboot user to run
+# this script!
+#
+# ie makePxeInstaller ubuntu trusty amd64
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are running as the pxeboot user
+
+checkuser "pxeboot"
+
+# -----------------------------------------------------------------------------
+# Set DIST, REL, and ARCH from the positional parameters 
+
+DIST=$1
+REL=$2
+ARCH=$3
+
+# -----------------------------------------------------------------------------
+# Call parameter checking code - hard exit if it's broken.
+
+. ./pxeBootCheck
+
+# -----------------------------------------------------------------------------
+# Set up the top-level directories for pxeboot
+
+checkemptyvar "HOME"
+
+info "Creating $HOME standard directories"
+
+[[ -d "${HOME}/download" ]] || mkdir "${HOME}/download"
+[[ -d "${HOME}/pxeboot"  ]] || mkdir "${HOME}/pxeboot"
+[[ -d "${HOME}/iso"      ]] || mkdir "${HOME}/iso"
+[[ -d "${HOME}/tftp"     ]] || mkdir "${HOME}/tftp"
+[[ -d "${HOME}/www"      ]] || mkdir "${HOME}/www"
+
+# Make the www directory group writeable so that files can
+# be copied in
+
+info "Making $HOME/www group-writeable"
+
+chmod 775 "${HOME}/www"
+chmod 775 "${HOME}/tftp"
+
+# -----------------------------------------------------------------------------
+# Set valid DISTFILE - note that the DISTFILE variants all look the same
+# now, but there was a time when the strings were slightly different for
+# each DIST and REL.
+
+DISTFILE_debian_squeeze="ftp://ftp.ca.debian.org/debian/dists/${REL}"
+DISTFILE_debian_wheezy="ftp://ftp.ca.debian.org/debian/dists/${REL}"
+DISTFILE_ubuntu_lucid="ftp://ftp.ca.debian.org/debian/dists/${REL}"
+DISTFILE_ubuntu_precise="ftp://archive.ubuntu.com/ubuntu/dists/${REL}"
+DISTFILE_ubuntu_trusty="ftp://archive.ubuntu.com/ubuntu/dists/${REL}"
+ 
+DISTFILE="DISTFILE_${DIST}_${REL}"
+DISTFILE="${!DISTFILE}"
+
+checkemptyvar "DISTFILE"
+
+# -----------------------------------------------------------------------------
+# Set installer image path and file
+
+NETBOOT_TAR_GZ=${DISTFILE}/main/installer-${ARCH}/current/images/netboot/netboot.tar.gz
+
+DOWNLOAD="${HOME}/download/${DIST}/${REL}/${ARCH}"
+INSTALLER="${HOME}/pxeboot/${DIST}/${REL}/${ARCH}"
+
+checkemptyvar "NETBOOT_TAR_GZ"
+checkemptyvar "DOWNLOAD"
+checkemptyvar "INSTALLER"
+
+[[ -d "${DOWNLOAD}"  ]] || mkdir -p "${DOWNLOAD}"
+[[ -d "${INSTALLER}" ]] || mkdir -p "${INSTALLER}"
+
+# -----------------------------------------------------------------------------
+# Check if we already extracted the netboot installer and exit if it exists
+
+[[ "$(ls -A "${INSTALLER}")" ]] && fail "We have already extracted to ${INSTALLER}"
+
+# -----------------------------------------------------------------------------
+# Otherwise get ready to download the installer if necessary
+#
+# Check to see if the destination files already exist before downloading
+# them
+
+info "Downloading netboot.tar.gz if we don't have it already"
+
+cd "${DOWNLOAD}"
+
+[[ -f netboot.tar.gz ]] || wget "${NETBOOT_TAR_GZ}"
+
+# Make a directory for the extracted netboot files and extract them
+
+info "Extracting netboot.tar.gz"
+
+cd "${INSTALLER}"
+
+pax -rz -f "${DOWNLOAD}/netboot.tar.gz" 
+
+# -----------------------------------------------------------------------------
+info "Done"
+# -----------------------------------------------------------------------------

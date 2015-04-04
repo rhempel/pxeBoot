@@ -1,0 +1,60 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# postinstall-setupvars.sh
+#
+# This is one of a series of scripts that live in /root/postInstall. They are
+# placed there to avoid being read by casual users and are intended to be
+# executed immediately after the VM is created to set up host specific 
+# configuration.
+#
+# This file should be sourced from other *-postInstall-* shell scripts if they
+# need to access any host-specific variables that would have been set up when
+# the VM was being installed.
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+# Shell variables accessible to all scripts that source this script:
+
+vmUserName=
+vmUserUID=
+vmUserGID=
+
+vmMachineName=
+vmHostName=
+vmIPAddress=
+
+hostUserName=
+hostMachineName=
+hostDomainName=
+ 
+vmNFSDirectory=
+hostNFSDirectory=
+
+hostIPAddress=
+
+vmDist=
+vmRel=
+vmArch=
+
+hostDebAddress=
+mirrorDebAddress=
+
+#Default google dns servers - IPV4/6
+
+ipv4DNSA=
+ipv4DNSB=
+ipv6DNSA=
+ipv6DNSB=
+
+# -----------------------------------------------------------------------------
+# Create a backup directory if it does not yet exist
+
+postInstallBackupDir="/root/backup"
+
+if [[ ! -d "${postInstallBackupDir}" ]]; then
+    mkdir -p "${postInstallBackupDir}"
+fi
+
+# -----------------------------------------------------------------------------
