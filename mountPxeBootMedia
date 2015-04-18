@@ -75,7 +75,7 @@ info "Mounting at \"${WWW_ROOT}/installer\""
 for iso in "${ISO_ROOT}/${DIST}/${REL}/${ARCH}"/*.iso; do
     debug "  Attempting mount of \"${iso}\""
 
-    if sudo mount "${iso}" "${WWW_ROOT}/installer"; then
+    if sudo mount -t iso9660 "${iso}" "${WWW_ROOT}/installer"; then
         info "  Mounted \"${iso}\""
     else
         fail "Can't mount \""${iso}"\" at \"${WWW_ROOT}/installer\""

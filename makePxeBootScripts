@@ -26,9 +26,9 @@ set -e
 info "Executing $0"
 
 # -----------------------------------------------------------------------------
-# Check to make sure we are running as the pxeboot user
+# Check to make sure we are NOT running as the root user
 
-checkuser "pxeboot"
+checknotuser "root"
 
 # -----------------------------------------------------------------------------
 # Set DIST, REL, and ARCH from the positional parameters 
@@ -47,9 +47,7 @@ ARCH=$3
 # BOOT_VGA variants all look the same now, but there was a time when the
 # strings were slightly different for each DIST and REL.
 
-checkemptyvar "HOME"
-
-INSTALLER="${HOME}/pxeboot/${DIST}/${REL}/${ARCH}"
+INSTALLER="/srv/pxeboot/pxeboot/${DIST}/${REL}/${ARCH}"
 
 checkemptyvar "INSTALLER"
 
