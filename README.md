@@ -41,16 +41,19 @@ Here's what a typical session looks like after you have chosen your
 distribution. These first steps are done once for each distribution variant.
 
 ```
-sudo -u pxeboot ./makePxeBootScripts ubuntu trusty amd64
-sudo -u pxeboot ./makePxeInstaller ubuntu trusty amd64 ev3dev-trusty64 ~/.passwords.preseed 
+sudo -u pxeboot ./makePxeBootDirs
+
+./makePxeBootInstaller ubuntu trusty amd64
+./makePxeBootScripts   ubuntu trusty amd64
 ```
 
 For each VM you want to create after that, you do this:
 
 ```
-./mountPxeBootMedia ubuntu trusty amd64
-./ubuntu/trusty/amd64/ev3dev-trusty64/createVM 
-./installPxeVM ubuntu trusty amd64 ev3dev-trusty64 ~/.passwords.preseed 
+./mountPxeBootMedia    ubuntu trusty amd64
+
+./makePxeBootableVM    ubuntu trusty amd64 template-trusty64-amd64
+./installPxeBootableVM ubuntu trusty amd64 template-trusty64-amd64
 ```
 
 NOTE: Not all of the distribution specific folders are fully up to date. For
@@ -71,7 +74,20 @@ sudo adduser rhempel pxeboot
 ```
 
 You'll need to log out of your desktop session and back in to make the
-group menbership change take effect.
+group membership change take effect.
+
+Once that's done, we can run another script to set up the
+folder structure that will be used for the rest of the scripts
+in the `pxeBoot` family. The folders are created under `/srv/pxeboot`
+and will be writeable by members of the `pxeboot` group - and
+we just made ourselves part of that group.
+
+```
+sudo -u pxeboot ./makePxeBootDirs
+```
+
+Now we can go ahead and run the rest of the scripts as ourselves -
+no need to become the `pxeboot` user.
 
 Each Debian based distribution has a slightly different
 `netboot`able kernel file, a special release based folder
@@ -90,7 +106,7 @@ identify the installation you want to perform:
 1. Distribution - `Ubuntu`
 1. Release - `Trusty`
 1. Architecture - `amd64`
-1. Machine - `ev3dev` Development
+1. Machine - `template-trusty-amd64`
 
 Your machine is the unique purpose for the installation - the framework
 makes it relatively easy to configure a target machine for multiple 
@@ -141,11 +157,8 @@ sudo apt-get --no-install-recommends install pax
 The folder containing these files will later be mounted at another
 location so that your TFTP server can find them.
 
-The script creates files in the `/srv/pxeboot` folder, so it's best
-to run it as the `pxeboot` user, like this:
-
 ```
-sudo -u pxeboot -s ./makePxeInstaller ubuntu trusty amd64 
+./makePxeBootInstaller ubuntu trusty amd64 
 ```
 
 With a typical broadband connection, this script will take
@@ -160,10 +173,8 @@ don't already exist. That makes it safe to run this
 script multiple times. The files are modified each time the
 script is run.
 
-Again, it neds to be run as the `pxeboot` user, like this:
-
 ```
-sudo -u pxeboot -s ./makePxeBootScripts ubuntu trusty amd64
+./makePxeBootScripts ubuntu trusty amd64
 ```
 
 This takes only a few seconds.
@@ -201,7 +212,7 @@ folder - if you do it's not at all clear which one will get
 mounted.
 
 ```
-./mountDistMedia ubuntu trusty amd64
+./mountPxeBootMedia ubuntu trusty amd64
 ```
 
 The default setup scripts give members of the `pxeboot` group
@@ -302,13 +313,13 @@ Now let's create our first VM!
 That's as simple as doing this from where your `pxeBoot` scripts live:
 
 ```
-./ubuntu/trusty/amd64/ev3dev-trusty64/createVM 
+./makePxeBootableVM ubuntu trusty amd64 template-trusty-amd64
 ```
 
 Followed by this to actually run the self-installing VM:
 
 ```
-./installPxeVM ubuntu trusty amd64 ev3dev-trusty64 ~/.passwords.preseed 
+./installPxeVM ubuntu trusty amd64 template-trusty-amd64
 ```
 
 That's all there is to it!
