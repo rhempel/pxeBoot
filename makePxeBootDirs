@@ -1,0 +1,44 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# makePxeDirs - Set up all of the directories that the pxeBoot system
+#               needs - then make them group-writeable by the pxeboot group
+#
+# You must be the pxeboot user to run this script!
+#
+# ie makePxeInstaller ubuntu trusty amd64
+#
+# Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
+#
+# See LICENSE for https://github.com/rhempel/pxeBoot
+# -----------------------------------------------------------------------------
+
+set -e
+
+. ./bashtools/src/fmt
+. ./bashtools/src/checkutil
+
+# -----------------------------------------------------------------------------
+
+info "Executing $0"
+
+# -----------------------------------------------------------------------------
+# Check to make sure we are running as the pxeboot user
+
+checkuser "pxeboot"
+
+# -----------------------------------------------------------------------------
+# Set up the top-level directories for pxeboot
+
+checkemptyvar "HOME"
+
+info "Creating $HOME directories and making them group-writeable"
+
+for d in download pxeboot iso tftp www; do
+    info "  ${HOME}/${d}"
+    [[ -d "${HOME}/${d}" ]] || mkdir "${HOME}/${d}"
+    chmod 775 "${HOME}/${d}"
+done
+
+# -----------------------------------------------------------------------------
+info "Done"
+# -----------------------------------------------------------------------------
