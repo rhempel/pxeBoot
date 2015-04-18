@@ -1,4 +1,4 @@
-!# /bin/bash
+#! /bin/bash
 # -----------------------------------------------------------------------------
 #
 # Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
