@@ -67,7 +67,7 @@ hostMachineName=$(hostname)
 hostDomainName=$(hostname -d)
 
 vmNFSDirectory="/home/${vmUserName}/projects"
-hostNFSDirectory="/home/${hostUserName}/nfs/${vmHostName}"
+hostNFSDirectory="/srv/nfs/${vmHostName}"
 
 hostIPAddress="$(VBoxManage getextradata ${VM_NAME} HostOnlyHostAddress)"
 hostIPAddress="${hostIPAddress#Value: }"
@@ -76,7 +76,9 @@ vmDist="${DIST}"
 vmRel="${REL}"
 vmArch="${ARCH}"
 
-hostDebAddress="pxeboot.installer.${hostDomainName}:8080"
+hostDebName="pxeboot.installer"
+hostDebDomain="${hostDomainName}"
+hostDebPort="8080"
 
 mirrorDebAddress="mirror.csclub.uwaterloo.ca"
 
@@ -102,7 +104,9 @@ checkemptyvar "hostIPAddress"
 checkemptyvar "vmDist"
 checkemptyvar "vmRel"
 checkemptyvar "vmArch"
-checkemptyvar "hostDebAddress"
+checkemptyvar "hostDebName"
+checkemptyvar "hostDebDomain"
+checkemptyvar "hostDebPort"
 checkemptyvar "mirrorDebAddress"
 checkemptyvar "ipv4DNSA"
 checkemptyvar "ipv4DNSB"
@@ -130,7 +134,9 @@ sed -e "s|^vmUserName=$|vmUserName=\"${vmUserName}\"|"                   \
     -e "s|^vmDist=$|vmDist=\"${vmDist}\"|"                               \
     -e "s|^vmRel=$|vmRel=\"${vmRel}\"|"                                  \
     -e "s|^vmArch=$|vmArch=\"${vmArch}\"|"                               \
-    -e "s|^hostDebAddress=$|hostDebAddress=\"${hostDebAddress}\"|"       \
+    -e "s|^hostDebName=$|hostDebName=\"${hostDebName}\"|"                \
+    -e "s|^hostDebDomain=$|hostDebDomain=\"${hostDebDomain}\"|"          \
+    -e "s|^hostDebPort=$|hostDebPort=\"${hostDebPort}\"|"                \
     -e "s|^mirrorDebAddress=$|mirrorDebAddress=\"${mirrorDebAddress}\"|" \
     -e "s|^ipv4DNSA=$|ipv4DNSA=\"${ipv4DNSA}\"|"                         \
     -e "s|^ipv4DNSB=$|ipv4DNSB=\"${ipv4DNSB}\"|"                         \
