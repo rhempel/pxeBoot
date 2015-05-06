@@ -1,13 +1,13 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# 11-postInstall-append-fstab-nfs
+# 22-postInstall-append-hosts-repositories
 #
 # This is one of a series of scripts that live in /root/postInstall. They are
 # placed there to avoid being read by casual users and are intended to be
 # executed immediately after the VM is created to set up host specific 
 # configuration.
 #
-# Checks to see if there's a backup for /etc/fstab - if not then it
+# Checks to see if there's a backup for /etc/hosts - if not then it
 # backs up the original hosts if it exists and writes out a new one
 #
 # Copyright (C) 2014-2015 Ralph Hempel <rhempel@hempeldesigngroup.com>
@@ -18,13 +18,8 @@
 . /root/postInstall/postInstall-setupvars
 
 # -----------------------------------------------------------------------------
-# Update the NFS record in /fstab - force nfs3 mounts
-#
-# Note: Another way around mounting using nfs3 is to write a little sed script
-#       to force NEED_IDMAPD=yes in /etc/default/nfs-common
-#
 
-FILE="/etc/fstab"
+FILE="/etc/hosts"
 
 echo "Appending to \"${FILE}\""
 
@@ -35,8 +30,11 @@ cat <<END-OF-FILE >> "${FILE}"
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
 #
-# Mount nfs share from VirtualBox host
-${hostIPAddress}:${hostNFSDirectory} ${vmNFSDirectory} nfs vers=3 0 0
+${hostIPAddress}	debian.jessie.armel.${hostDebDomain}
+${hostIPAddress}	ev3dev.jessie.armel.${hostDebDomain}
+${hostIPAddress}	ev3dev.trusty.amd64.${hostDebDomain}
+${hostIPAddress}	ubuntu.trusty.amd64.${hostDebDomain}
+${hostIPAddress}	ubuntu.trusty.i386.${hostDebDomain}
 
 END-OF-FILE
 

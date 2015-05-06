@@ -28,7 +28,7 @@ cat <<END-OF-FILE > "/etc/apt/sources.list.d/installer.list"
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
 #
-deb http://${hostDebAddress}/${vmDist} ${vmRel} main
+deb http://${hostDebName}.${hostDebDomain}:%{hostDebPort} ${vmRel} main
 END-OF-FILE
 
 # -----------------------------------------------------------------------------

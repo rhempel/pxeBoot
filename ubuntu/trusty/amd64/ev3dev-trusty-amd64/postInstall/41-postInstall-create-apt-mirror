@@ -27,8 +27,8 @@ cat <<END-OF-FILE > "/etc/apt/sources.list.d/mirror.list"
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
 #
-deb http://${mirrorDebAddress}/${vmDist} ${vmRel}         main universe
-deb http://${mirrorDebAddress}/${vmDist} ${vmRel}-updates main universe
+# deb http://${mirrorDebAddress}/${vmDist} ${vmRel}         main universe
+# deb http://${mirrorDebAddress}/${vmDist} ${vmRel}-updates main universe
 END-OF-FILE
 
 # -----------------------------------------------------------------------------

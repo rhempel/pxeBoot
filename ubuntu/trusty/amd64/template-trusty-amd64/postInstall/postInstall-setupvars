@@ -38,7 +38,10 @@ vmDist=
 vmRel=
 vmArch=
 
-hostDebAddress=
+hostDebName=
+hostDebDomain=
+hostDebPort=
+
 mirrorDebAddress=
 
 #Default google dns servers - IPV4/6

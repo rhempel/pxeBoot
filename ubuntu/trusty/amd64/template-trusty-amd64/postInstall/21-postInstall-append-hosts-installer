@@ -1,6 +1,6 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# 20-postInstall-append-hosts-installer
+# 21-postInstall-append-hosts-installer
 #
 # This is one of a series of scripts that live in /root/postInstall. They are
 # placed there to avoid being read by casual users and are intended to be
@@ -30,7 +30,7 @@ cat <<END-OF-FILE >> "${FILE}"
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
 #
-${hostIPAddress}	${hostDebAddress%%:*}
+${hostIPAddress}	pxeboot.installer.${hostDebDomain}
 
 END-OF-FILE
 

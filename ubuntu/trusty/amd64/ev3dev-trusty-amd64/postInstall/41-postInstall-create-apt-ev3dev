@@ -26,7 +26,7 @@ cat <<END-OF-FILE > "/etc/apt/sources.list.d/ev3dev.list"
 #
 # If you need to change things, consider updating the script!
 #
-deb http://ev3dev.org/debian ${vmRel} main
+deb [arch=amd64] http://ev3dev.trusty.amd64.${hostDebDomain}:${hostDebPort} ${vmRel} main
 END-OF-FILE
 
 apt-key adv --keyserver pgp.mit.edu --recv-keys 2B210565

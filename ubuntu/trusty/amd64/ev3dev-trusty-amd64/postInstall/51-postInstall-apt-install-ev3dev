@@ -37,7 +37,7 @@ chmod +r /boot/vmlinuz*
 
 apt-get -y --no-install-recommends install git
 apt-get -y --no-install-recommends install kernel-package devscripts
-apt-get -y --no-install-recommends build-essential ncurses-dev u-boot-tools
-apt-get -y --no-install-recommends libc6-i386 fakeroot bc
+apt-get -y --no-install-recommends install build-essential ncurses-dev u-boot-tools
+apt-get -y --no-install-recommends install libc6-i386 fakeroot bc
 
 # -----------------------------------------------------------------------------
