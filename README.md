@@ -70,7 +70,7 @@ new system user called `pxeboot` and add ourselves to the group:
 sudo adduser --system --disabled-password --disabled-login \
              --home /srv/pxeboot \
              --group pxeboot
-sudo adduser rhempel pxeboot
+sudo adduser username pxeboot
 ```
 
 You'll need to log out of your desktop session and back in to make the
