@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 11-postInstall-append-fstab-nfs
 #
@@ -22,7 +22,6 @@
 #
 # Note: Another way around mounting using nfs3 is to write a little sed script
 #       to force NEED_IDMAPD=yes in /etc/default/nfs-common
-#
 
 FILE="/etc/fstab"
 
@@ -36,7 +35,9 @@ cat <<END-OF-FILE >> "${FILE}"
 # a custom script to your VM postInstall folder.
 #
 # Mount nfs share from VirtualBox host
+
 ${hostIPAddress}:${hostNFSDirectory} ${vmNFSDirectory} nfs vers=3 0 0
+${hostIPAddress}:/srv/nfs/arm-2011.03 /opt/arm-2011.03 nfs vers=3 0 0
 
 END-OF-FILE
 

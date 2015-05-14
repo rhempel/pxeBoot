@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # 22-postInstall-append-hosts-repositories
 #
@@ -29,10 +29,11 @@ cat <<END-OF-FILE >> "${FILE}"
 #
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
-#
+ 
 ${hostIPAddress}	debian.jessie.armel.${hostDebDomain}
 ${hostIPAddress}	ev3dev.jessie.armel.${hostDebDomain}
 ${hostIPAddress}	ev3dev.trusty.amd64.${hostDebDomain}
+${hostIPAddress}	ev3dev.wheezy.amd64.${hostDebDomain}
 ${hostIPAddress}	ubuntu.trusty.amd64.${hostDebDomain}
 ${hostIPAddress}	ubuntu.trusty.i386.${hostDebDomain}
 
