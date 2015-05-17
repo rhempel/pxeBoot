@@ -29,8 +29,10 @@ cat <<END-OF-FILE > "${FILE}"
 # If you need to change things, consider updating the script or adding
 # a custom script to your VM postInstall folder.
 
-deb  [arch=amd64] http://ubuntu.trusty.amd64.${hostDebDomain}:${hostDebPort} ${vmRel} main universe multiverse
-deb  [arch=i386 ] http://ubuntu.trusty.i386.${hostDebDomain}:${hostDebPort}  ${vmRel} main universe multiverse
+deb  [arch=amd64] http://ubuntu.trusty.amd64.${hostDebDomain}:${hostDebPort}         trusty          main universe multiverse
+deb  [arch=amd64] http://ubuntu.trusty-updates.amd64.${hostDebDomain}:${hostDebPort} trusty-updates  main universe multiverse
+deb  [arch=amd64] http://ubuntu.trusty-security.amd64.${hostDebDomain}:${hostDebPort} trusty-security main universe multiverse
+deb  [arch=i386 ] http://ubuntu.trusty.i386.${hostDebDomain}:${hostDebPort}          trusty          main universe multiverse
 
 END-OF-FILE
 

@@ -30,7 +30,7 @@ apt-get -y --no-install-recommends install brickstrap
 
 update-guestfs-appliance
 
-usermod -a -G kvm ${myUserName}
+usermod -a -G kvm ${vmUserName}
 chmod +r /boot/vmlinuz*
 
 # -----------------------------------------------------------------------------

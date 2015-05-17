@@ -35,6 +35,8 @@ ${hostIPAddress}	ev3dev.jessie.armel.${hostDebDomain}
 ${hostIPAddress}	ev3dev.trusty.amd64.${hostDebDomain}
 ${hostIPAddress}	ev3dev.wheezy.amd64.${hostDebDomain}
 ${hostIPAddress}	ubuntu.trusty.amd64.${hostDebDomain}
+${hostIPAddress}	ubuntu.trusty-updates.amd64.${hostDebDomain}
+${hostIPAddress}	ubuntu.trusty-security.amd64.${hostDebDomain}
 ${hostIPAddress}	ubuntu.trusty.i386.${hostDebDomain}
 
 END-OF-FILE
